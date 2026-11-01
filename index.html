@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#28112b">
+  <meta name="description" content="Aurelia Orbital Works — a lightweight, retro-futuristic mission control for rocket design, transfer plotting and orbital physics.">
+  <title>Aurelia — Orbital Works</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2328112b'/%3E%3Cellipse cx='32' cy='32' rx='23' ry='9' transform='rotate(-28 32 32)' fill='none' stroke='%238daa91' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23d5ac77'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="scene" aria-hidden="true">
+    <canvas id="scene-canvas"></canvas>
+    <div class="scene__wash"></div>
+    <div class="scene__vignette"></div>
+    <div class="scene__grain"></div>
+    <div class="scene__reticle scene__reticle--one"></div>
+    <div class="scene__reticle scene__reticle--two"></div>
+  </div>
+
+  <header class="topbar">
+    <a href="#" class="brand" aria-label="Aurelia Orbital Works home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 42 42" fill="none">
+          <ellipse cx="21" cy="21" rx="17" ry="6.5" transform="rotate(-28 21 21)" stroke="currentColor" stroke-width="1.2"/>
+          <ellipse cx="21" cy="21" rx="17" ry="6.5" transform="rotate(32 21 21)" stroke="currentColor" stroke-opacity=".46" stroke-width="1"/>
+          <circle cx="21" cy="21" r="4.2" fill="currentColor"/>
+          <circle cx="35.2" cy="12.2" r="1.5" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="brand__type">
+        <span class="brand__name">Aurelia</span>
+        <span class="brand__sub">Orbital Works</span>
+      </span>
+    </a>
+
+    <div class="topbar__mission">
+      <span class="micro-label">Mission Control</span>
+      <span class="hairline"></span>
+      <span class="topbar__location">Vehicle Assembly <span>/</span> Bay 04</span>
+    </div>
+
+    <div class="topbar__right">
+      <span class="status"><i></i> Systems nominal</span>
+      <span class="topbar__clock" id="mission-clock">06:42:18 UTC</span>
+      <button class="round-button" type="button" id="sound-toggle" aria-label="Toggle ambient sound" data-tip="Ambient telemetry">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 9.5v5h3.6l4.4 3.4V6.1L7.6 9.5H4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.7a7.8 7.8 0 0 1 0 10.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <aside class="console" aria-label="Mission console">
+      <div class="console__meta">
+        <span class="micro-label">Mission Console</span>
+        <span class="mono-tag">MW / 004</span>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="Mission console sections">
+        <button class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-creator" id="tab-creator" data-tab="creator">
+          <span class="tab__num">01</span>
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2.8c2.7 2.1 4 5 4 8.2 0 2.5-.8 4.7-2.1 6.3h-3.8A9.6 9.6 0 0 1 8 11c0-3.2 1.3-6.1 4-8.2Z" stroke="currentColor" stroke-width="1.25"/>
+            <path d="M9.6 17.3 7.2 20l.6-4.1M14.4 17.3l2.4 2.7-.6-4.1M10.2 9.4h3.6M12 17.3v3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+          </svg>
+          <span class="tab__label">Rocket<br>Creator</span>
+        </button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-trajectory" id="tab-trajectory" data-tab="trajectory" tabindex="-1">
+          <span class="tab__num">02</span>
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.25"/>
+            <ellipse cx="12" cy="12" rx="9.2" ry="4.3" transform="rotate(-34 12 12)" stroke="currentColor" stroke-width="1.25"/>
+            <circle cx="19" cy="7.6" r="1.4" fill="currentColor"/>
+          </svg>
+          <span class="tab__label">Trajectory</span>
+        </button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-physics" id="tab-physics" data-tab="physics" tabindex="-1">
+          <span class="tab__num">03</span>
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="2" fill="var(--plum-deep)" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="15" cy="12" r="2" fill="var(--plum-deep)" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="11" cy="17" r="2" fill="var(--plum-deep)" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          <span class="tab__label">Physics<br>Spec</span>
+        </button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-facts" id="tab-facts" data-tab="facts" tabindex="-1">
+          <span class="tab__num">04</span>
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3.1c.7 4.1 1.8 5.2 5.9 5.9-4.1.7-5.2 1.8-5.9 5.9-.7-4.1-1.8-5.2-5.9-5.9 4.1-.7 5.2-1.8 5.9-5.9Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+            <path d="M18.4 14.1c.35 2.05.9 2.6 2.95 2.95-2.05.35-2.6.9-2.95 2.95-.35-2.05-.9-2.6-2.95-2.95 2.05-.35 2.6-.9 2.95-2.95Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+            <circle cx="5.2" cy="17.5" r="1.2" stroke="currentColor" stroke-width="1.1"/>
+          </svg>
+          <span class="tab__label">Nerd<br>Facts</span>
+        </button>
+        <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-flight" id="tab-flight" data-tab="flight" tabindex="-1">
+          <span class="tab__num">05</span>
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2.8c2.4 2.2 3.6 5 3.6 8.1 0 2.1-.6 4-1.7 5.6h-3.8A8.9 8.9 0 0 1 8.4 10.9c0-3.1 1.2-5.9 3.6-8.1Z" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M9.9 16.5 8.4 20l.3-3.4M14.1 16.5 15.6 20l-.3-3.4M12 18.6v2.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <span class="tab__label">Flight<br>Deck</span>
+        </button>
+      </nav>
+
+      <div class="console__viewport" id="console-viewport">
+        <section class="panel is-active" id="panel-creator" role="tabpanel" aria-labelledby="tab-creator" data-panel="creator">
+          <header class="panel__header">
+            <p class="eyebrow"><span>01</span> Vehicle assembly</p>
+            <h1>Build your<br><em>launch vehicle.</em></h1>
+            <p class="panel__intro">Choose a frame, finish and engine. Apply when ready.</p>
+          </header>
+
+          <div class="rocket-bay" id="rocket-bay">
+            <canvas id="rocket-canvas" aria-label="Static 3D preview of the selected rocket"></canvas>
+            <div class="rocket-bay__grid" aria-hidden="true"></div>
+            <span class="corner corner--tl" aria-hidden="true"></span>
+            <span class="corner corner--tr" aria-hidden="true"></span>
+            <span class="corner corner--bl" aria-hidden="true"></span>
+            <span class="corner corner--br" aria-hidden="true"></span>
+            <div class="rocket-bay__top">
+              <span class="micro-label" id="preview-status">Configuration locked</span>
+              <span class="mono-tag" id="preview-triangles">— TRI</span>
+            </div>
+            <div class="rocket-bay__bottom">
+              <span class="rocket-bay__name" id="preview-name">Falcon 9</span>
+              <span class="rocket-bay__meta" id="preview-meta">Medium lift / RP-1</span>
+            </div>
+          </div>
+
+          <section class="control-section">
+            <div class="section-head">
+              <span class="section-title">Airframe</span>
+              <span class="mono-tag">5 presets</span>
+            </div>
+            <div class="template-strip" id="template-strip" role="listbox" aria-label="Rocket templates">
+              <button class="template is-selected" type="button" role="option" aria-selected="true" data-template="falcon9">
+                <span class="template__glyph template__glyph--falcon" aria-hidden="true"></span>
+                <span class="template__name">Falcon 9</span>
+                <span class="template__class">Medium</span>
+              </button>
+              <button class="template" type="button" role="option" aria-selected="false" data-template="saturnv">
+                <span class="template__glyph template__glyph--saturn" aria-hidden="true"></span>
+                <span class="template__name">Saturn V</span>
+                <span class="template__class">Super heavy</span>
+              </button>
+              <button class="template" type="button" role="option" aria-selected="false" data-template="electron">
+                <span class="template__glyph template__glyph--electron" aria-hidden="true"></span>
+                <span class="template__name">Electron</span>
+                <span class="template__class">Small</span>
+              </button>
+              <button class="template" type="button" role="option" aria-selected="false" data-template="soyuz">
+                <span class="template__glyph template__glyph--soyuz" aria-hidden="true"></span>
+                <span class="template__name">Soyuz</span>
+                <span class="template__class">Crew</span>
+              </button>
+              <button class="template" type="button" role="option" aria-selected="false" data-template="nova">
+                <span class="template__glyph template__glyph--nova" aria-hidden="true"></span>
+                <span class="template__name">Nova I</span>
+                <span class="template__class">Concept</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="control-section control-section--split">
+            <div>
+              <div class="section-head">
+                <span class="section-title">Finish</span>
+                <span class="mono-tag" id="color-name">Ember</span>
+              </div>
+              <div class="swatches" id="swatches" role="radiogroup" aria-label="Rocket finish">
+                <button class="swatch is-selected" type="button" role="radio" aria-checked="true" aria-label="Ember" data-color="#d65f39" style="--swatch:#d65f39"></button>
+                <button class="swatch" type="button" role="radio" aria-checked="false" aria-label="Ivory" data-color="#ddd6c6" style="--swatch:#ddd6c6"></button>
+                <button class="swatch" type="button" role="radio" aria-checked="false" aria-label="Gold" data-color="#c79a52" style="--swatch:#c79a52"></button>
+                <button class="swatch" type="button" role="radio" aria-checked="false" aria-label="Cobalt" data-color="#3f729c" style="--swatch:#3f729c"></button>
+                <button class="swatch" type="button" role="radio" aria-checked="false" aria-label="Graphite" data-color="#3b4145" style="--swatch:#3b4145"></button>
+                <label class="swatch swatch--custom" data-tip="Custom finish">
+                  <input type="color" id="custom-color" value="#d65f39" aria-label="Custom rocket finish">
+                  <span>+</span>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-head">
+              <span class="section-title">Engine</span>
+              <span class="mono-tag" id="engine-thrust-tag">845 kN</span>
+            </div>
+            <div class="engine-grid" id="engine-grid" role="radiogroup" aria-label="Engine selection">
+              <button class="engine is-selected" type="button" role="radio" aria-checked="true" data-engine="merlin">
+                <span class="engine__dot"></span>
+                <span class="engine__name">Merlin 1D</span>
+                <span class="engine__spec">845 kN</span>
+              </button>
+              <button class="engine" type="button" role="radio" aria-checked="false" data-engine="raptor">
+                <span class="engine__dot"></span>
+                <span class="engine__name">Raptor 2</span>
+                <span class="engine__spec">2.26 MN</span>
+              </button>
+              <button class="engine" type="button" role="radio" aria-checked="false" data-engine="kestrel">
+                <span class="engine__dot"></span>
+                <span class="engine__name">Kestrel</span>
+                <span class="engine__spec">31 kN</span>
+              </button>
+              <button class="engine" type="button" role="radio" aria-checked="false" data-engine="aeon">
+                <span class="engine__dot"></span>
+                <span class="engine__name">Aeon R</span>
+                <span class="engine__spec">98 kN</span>
+              </button>
+            </div>
+          </section>
+
+          <button class="apply-button" type="button" id="apply-config">
+            <span>Apply configuration</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13.6 6.8 19 12l-5.4 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="panel__footnote">Preview renders on apply only. Approx. 2–5k triangles.</p>
+        </section>
+
+        <section class="panel" id="panel-trajectory" role="tabpanel" aria-labelledby="tab-trajectory" data-panel="trajectory">
+          <header class="panel__header">
+            <p class="eyebrow"><span>02</span> Navigation</p>
+            <h1>Chart a course<br><em>through the dark.</em></h1>
+            <p class="panel__intro">Pre-computed transfers. Pick a port, read the burn.</p>
+          </header>
+
+          <div class="orbit-chart" aria-label="Simplified orbital transfer visualizer">
+            <svg viewBox="0 0 360 204" class="orbit-chart__svg" role="img" aria-labelledby="orbit-chart-title">
+              <title id="orbit-chart-title">Transfer path from Aurelia Prime to selected destination</title>
+              <defs>
+                <radialGradient id="earth-glow"><stop offset="0" stop-color="#ed9d57" stop-opacity=".55"/><stop offset=".7" stop-color="#d65f39" stop-opacity=".08"/><stop offset="1" stop-color="#d65f39" stop-opacity="0"/></radialGradient>
+                <linearGradient id="route-gradient" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e9b96e"/><stop offset=".55" stop-color="#f3e5c9"/><stop offset="1" stop-color="#6f9ebd"/></linearGradient>
+                <filter id="soft-glow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <g class="chart-grid" opacity=".5">
+                <circle cx="84" cy="152" r="31"/><circle cx="84" cy="152" r="64"/><circle cx="84" cy="152" r="102"/><circle cx="84" cy="152" r="146"/>
+                <path d="M84 8v222M8 152h344"/>
+              </g>
+              <circle cx="84" cy="152" r="74" fill="url(#earth-glow)"/>
+              <circle cx="84" cy="152" r="19" fill="#10202c" stroke="#d98b51" stroke-width="1.1"/>
+              <path d="M70 141c9 5 11 15 6 24M88 137c10 7 13 20 8 31" stroke="#e8a56b" stroke-width="2.5" stroke-linecap="round" opacity=".65"/>
+              <path id="transfer-path" class="transfer-path" d="M101 137C154 54 292 62 329 119" fill="none" stroke="url(#route-gradient)" stroke-width="1.4" stroke-dasharray="4 6"/>
+              <circle id="transfer-craft" class="transfer-craft" cx="101" cy="137" r="3.2" fill="#f4dfba" filter="url(#soft-glow)"/>
+              <g class="chart-planet chart-planet--moon" data-node="nacre" tabindex="0" role="button" aria-label="Select Nacre">
+                <circle cx="230" cy="105" r="8" fill="#c4b599" opacity=".55"/>
+                <circle cx="230" cy="105" r="13" fill="none" stroke="#c4b599" stroke-opacity=".25"/>
+              </g>
+              <g class="chart-planet chart-planet--mars" data-node="cinder" tabindex="0" role="button" aria-label="Select Cinder Reach">
+                <circle cx="329" cy="119" r="11" fill="#b85c3d"/>
+                <circle cx="329" cy="119" r="17" fill="none" stroke="#d98b65" stroke-opacity=".28"/>
+              </g>
+              <g class="chart-planet chart-planet--station" data-node="vela" tabindex="0" role="button" aria-label="Select Vela Station">
+                <path d="M296 66v-8M292 62h8" stroke="#77a7c4" stroke-width="1"/><circle cx="296" cy="66" r="2.8" fill="#77a7c4"/>
+                <circle cx="296" cy="66" r="8" fill="none" stroke="#77a7c4" stroke-opacity=".22"/>
+              </g>
+              <text x="84" y="193" class="chart-label">AURELIA</text>
+              <text x="318" y="146" class="chart-label">CINDER</text>
+              <text x="241" y="91" class="chart-label">NACRE</text>
+            </svg>
+            <div class="orbit-chart__readout">
+              <span class="micro-label">Transfer window</span>
+              <strong id="transfer-window">T + 38d 04h</strong>
+              <span class="status status--small"><i></i> Nominal</span>
+            </div>
+          </div>
+
+          <section class="control-section">
+            <div class="section-head">
+              <span class="section-title">Destination</span>
+              <span class="mono-tag" id="destination-distance">384,400 km</span>
+            </div>
+            <div class="destination-list" id="destination-list" role="listbox" aria-label="Destination">
+              <button class="destination is-selected" type="button" role="option" aria-selected="true" data-dest="nacre">
+                <span class="destination__orb destination__orb--nacre"></span>
+                <span class="destination__info"><strong>Nacre</strong><small>Lunar gateway</small></span>
+                <span class="destination__dv">3.24 <small>km/s</small></span>
+              </button>
+              <button class="destination" type="button" role="option" aria-selected="false" data-dest="cinder">
+                <span class="destination__orb destination__orb--cinder"></span>
+                <span class="destination__info"><strong>Cinder Reach</strong><small>Areocentric orbit</small></span>
+                <span class="destination__dv">4.80 <small>km/s</small></span>
+              </button>
+              <button class="destination" type="button" role="option" aria-selected="false" data-dest="vela">
+                <span class="destination__orb destination__orb--vela"></span>
+                <span class="destination__info"><strong>Vela Station</strong><small>Sun–Earth L2</small></span>
+                <span class="destination__dv">3.92 <small>km/s</small></span>
+              </button>
+            </div>
+          </section>
+
+          <dl class="readout-grid">
+            <div><dt>Velocity</dt><dd id="route-velocity">7.66 <small>km/s</small></dd></div>
+            <div><dt>Flight time</dt><dd id="route-time">3d 02h</dd></div>
+            <div><dt>Arrival</dt><dd id="route-arrival">Retrograde</dd></div>
+            <div><dt>Inclination</dt><dd id="route-inc">5.1°</dd></div>
+          </dl>
+          <p class="panel__footnote">Keplerian solution, solved once. Dashed line is illustrative, not to scale.</p>
+        </section>
+
+        <section class="panel" id="panel-physics" role="tabpanel" aria-labelledby="tab-physics" data-panel="physics">
+          <header class="panel__header">
+            <p class="eyebrow"><span>03</span> Flight mechanics</p>
+            <h1>The numbers<br><em>behind the burn.</em></h1>
+            <p class="panel__intro">A lightweight estimate. Adjust a value, then settle.</p>
+          </header>
+
+          <div class="metric-grid">
+            <article class="metric metric--hero">
+              <span class="metric__label">Delta-v</span>
+              <strong class="metric__value" id="metric-dv">9.28<small> km/s</small></strong>
+              <span class="metric__sub">to low orbit</span>
+              <span class="meter"><i id="meter-dv" style="width:62%"></i></span>
+            </article>
+            <article class="metric">
+              <span class="metric__label">Thrust / weight</span>
+              <strong class="metric__value" id="metric-twr">1.42</strong>
+              <span class="metric__sub" id="metric-twr-note">Liftoff capable</span>
+            </article>
+            <article class="metric">
+              <span class="metric__label">Burn time</span>
+              <strong class="metric__value" id="metric-burn">162<small> s</small></strong>
+              <span class="metric__sub">first stage</span>
+            </article>
+            <article class="metric">
+              <span class="metric__label">Wet mass</span>
+              <strong class="metric__value" id="metric-mass">549<small> t</small></strong>
+              <span class="metric__sub" id="metric-mass-sub">549,000 kg</span>
+            </article>
+          </div>
+
+          <section class="control-section controls-stack">
+            <div class="range-control">
+              <label for="mass-slider"><span>Dry mass</span><output id="mass-output">27.6 t</output></label>
+              <input id="mass-slider" type="range" min="8" max="120" step="0.5" value="27.6">
+              <div class="range-scale"><span>8 t</span><span>120 t</span></div>
+            </div>
+            <div class="range-control">
+              <label for="fuel-slider"><span>Propellant</span><output id="fuel-output">521 t</output></label>
+              <input id="fuel-slider" type="range" min="80" max="1200" step="1" value="521">
+              <div class="range-scale"><span>80 t</span><span>1,200 t</span></div>
+            </div>
+            <div class="range-control">
+              <label for="thrust-slider"><span>Sea-level thrust</span><output id="thrust-output">7,600 kN</output></label>
+              <input id="thrust-slider" type="range" min="500" max="16000" step="100" value="7600">
+              <div class="range-scale"><span>500 kN</span><span>16,000 kN</span></div>
+            </div>
+            <div class="range-control">
+              <label for="isp-slider"><span>Specific impulse</span><output id="isp-output">311 s</output></label>
+              <input id="isp-slider" type="range" min="180" max="460" step="1" value="311">
+              <div class="range-scale"><span>180 s</span><span>460 s</span></div>
+            </div>
+          </section>
+
+          <div class="calculation-note">
+            <span class="calculation-note__icon" aria-hidden="true">ƒ</span>
+            <p><strong>Tsiolkovsky, quietly.</strong> Δv = I<sub>sp</sub> · g₀ · ln(m₀ / m₁). Values update after a 140 ms debounce.</p>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-facts" role="tabpanel" aria-labelledby="tab-facts" data-panel="facts">
+          <header class="panel__header">
+            <p class="eyebrow"><span>04</span> The archive</p>
+            <h1>Small facts.<br><em>Very large universe.</em></h1>
+            <p class="panel__intro">Curated notes from the history and mechanics of getting off-world.</p>
+          </header>
+
+          <div class="fact-categories" id="fact-categories" role="tablist" aria-label="Fact categories">
+            <button class="fact-category is-active" type="button" role="tab" aria-selected="true" data-category="orbits">Orbits</button>
+            <button class="fact-category" type="button" role="tab" aria-selected="false" data-category="propulsion">Propulsion</button>
+            <button class="fact-category" type="button" role="tab" aria-selected="false" data-category="history">History</button>
+            <button class="fact-category" type="button" role="tab" aria-selected="false" data-category="deep">Deep space</button>
+          </div>
+
+          <div class="fact-stage" id="fact-stage" aria-live="polite">
+            <div class="fact-skeleton" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="fact-footer">
+            <span class="micro-label" id="fact-count">01 / 03</span>
+            <div class="fact-nav">
+              <button class="round-button round-button--small" type="button" id="fact-prev" aria-label="Previous fact">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="round-button round-button--small" type="button" id="fact-next" aria-label="Next fact">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-flight" role="tabpanel" aria-labelledby="tab-flight" data-panel="flight">
+          <header class="panel__header">
+            <p class="eyebrow"><span>05</span> Flight deck</p>
+            <h1>Light it<br><em>and hold.</em></h1>
+            <p class="panel__intro">Pad 04 on Aurelia Prime. Throttle up, then steer with A / D.</p>
+          </header>
+
+          <div class="flight-id">
+            <div class="flight-id__vehicle">
+              <span class="micro-label">On the pad</span>
+              <strong id="flight-vehicle">Falcon 9 · Merlin 1D</strong>
+            </div>
+            <div class="flight-id__meta">
+              <span class="mono-tag" id="flight-phase">Prelaunch</span>
+              <span class="status status--small"><i></i><span id="flight-status-text">Pad secure</span></span>
+            </div>
+          </div>
+
+          <div class="metric-grid flight-metrics">
+            <article class="metric">
+              <span class="metric__label">Altitude</span>
+              <strong class="metric__value" id="flight-altitude">0<small> km</small></strong>
+              <span class="metric__sub" id="flight-altitude-sub">Pad 04</span>
+            </article>
+            <article class="metric">
+              <span class="metric__label">Velocity</span>
+              <strong class="metric__value" id="flight-velocity">0<small> m/s</small></strong>
+              <span class="metric__sub" id="flight-vspeed">V/S 0 m/s</span>
+            </article>
+            <article class="metric">
+              <span class="metric__label">Fuel</span>
+              <strong class="metric__value" id="flight-fuel">100<small> %</small></strong>
+              <span class="metric__sub" id="flight-tw">T/W 2.40</span>
+            </article>
+          </div>
+
+          <section class="control-section">
+            <div class="section-head">
+              <span class="section-title">Throttle</span>
+              <span class="mono-tag" id="throttle-tag">0 %</span>
+            </div>
+            <div class="range-control">
+              <input id="throttle-slider" type="range" min="0" max="100" step="1" value="0" aria-label="Engine throttle" disabled>
+              <div class="range-scale"><span>Cutoff</span><span>Full</span></div>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-head">
+              <span class="section-title">Attitude</span>
+              <span class="mono-tag" id="pitch-tag">0.0°</span>
+            </div>
+            <div class="steer-row">
+              <button class="steer-button" type="button" id="steer-left" aria-label="Steer left" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="steer-gauge" aria-hidden="true">
+                <span class="steer-gauge__center"></span>
+                <i id="pitch-needle"></i>
+              </div>
+              <button class="steer-button" type="button" id="steer-right" aria-label="Steer right" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <p class="steer-hint">Hold to pitch · A / D · W / S throttle · X cutoff</p>
+          </section>
+
+          <div class="flight-actions">
+            <button class="apply-button flight-launch" type="button" id="launch-button">
+              <span>Initiate launch</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2c2.2 2 3.3 4.7 3.3 7.7v2.9h-6.6v-2.9c0-3 1.1-5.7 3.3-7.7Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8.7 15.2 7 19.6l.5-4M15.3 15.2 17 19.6l-.5-4M12 16.4v3.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+            <button class="ghost-button" type="button" id="recover-button" disabled>Recover</button>
+          </div>
+          <p class="panel__footnote">Pitch over to build sideways speed. Insertion at 70 km and 1.4 km/s.</p>
+        </section>
+      </div>
+
+      <footer class="console__footer">
+        <span class="console__footer-dot"></span>
+        <span id="console-status">Bay ready</span>
+        <span class="console__footer-right">Aurelia / 2088</span>
+      </footer>
+    </aside>
+
+    <div class="stage__ui">
+      <div class="scene-chapter" id="scene-chapter" aria-live="polite">
+        <p class="eyebrow"><span class="eyebrow__dot"></span><span id="chapter-kicker">Sector 01 · Low orbit</span></p>
+        <h2 id="chapter-title">A quiet place<br><em>to begin.</em></h2>
+        <p id="chapter-copy">Aurelia Prime turns below. The bay is open, the fuel is cold, and the next launch is yours.</p>
+      </div>
+
+      <button class="planet-tag" type="button" id="planet-tag" data-tip="Focus Aurelia Prime">
+        <span class="planet-tag__orbit" aria-hidden="true"></span>
+        <span class="planet-tag__content">
+          <span class="micro-label">Target / 01</span>
+          <strong>Aurelia Prime</strong>
+          <span class="planet-tag__meta">8.4 R⊕ · 412 km altitude</span>
+        </span>
+      </button>
+
+      <div class="telemetry" aria-label="Live telemetry">
+        <div class="telemetry__item"><span>Altitude</span><strong id="telemetry-altitude">412.8</strong><small>km</small></div>
+        <div class="telemetry__item"><span>Velocity</span><strong id="telemetry-velocity">7.66</strong><small>km/s</small></div>
+        <div class="telemetry__item"><span>Inclination</span><strong>51.6</strong><small>deg</small></div>
+      </div>
+
+      <div class="view-meter" aria-hidden="true">
+        <span class="view-meter__label">Drag orbit · Wheel dolly</span>
+        <div class="view-meter__track"><i id="view-progress"></i></div>
+        <span class="view-meter__index" id="view-index">01</span>
+      </div>
+
+      <div class="stage__coords" aria-hidden="true">
+        <span>LAT 08° 14′ N</span>
+        <span>LON 142° 07′ E</span>
+      </div>
+    </div>
+
+    <div class="trajectory-overlay" id="trajectory-overlay" aria-hidden="true">
+      <svg viewBox="0 0 900 650" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="overlay-route" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#e9b96e" stop-opacity="0"/>
+            <stop offset=".3" stop-color="#e9b96e" stop-opacity=".7"/>
+            <stop offset="1" stop-color="#8fb6cf" stop-opacity=".2"/>
+          </linearGradient>
+        </defs>
+        <path d="M80 520C286 170 704 122 890 286" fill="none" stroke="url(#overlay-route)" stroke-width="1.2" stroke-dasharray="5 9" class="overlay-route"/>
+        <circle cx="80" cy="520" r="5" fill="#e9b96e" opacity=".7"/>
+        <circle cx="890" cy="286" r="8" fill="#b85c3d" opacity=".7"/>
+        <circle cx="890" cy="286" r="18" fill="none" stroke="#d98b65" stroke-opacity=".3"/>
+        <text x="106" y="548" class="overlay-label">AURELIA PRIME</text>
+        <text x="786" y="262" class="overlay-label">CINDER REACH</text>
+      </svg>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="three.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
